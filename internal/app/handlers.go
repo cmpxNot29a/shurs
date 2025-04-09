@@ -37,7 +37,7 @@ func handleCreateShortURL(w http.ResponseWriter, r *http.Request) {
 	baseURL := fmt.Sprintf("http://%s", r.Host) // TODO: Config
 	shortURL := fmt.Sprintf("%s/%s", baseURL, randomID)
 
-	// w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(shortURL))
 }
