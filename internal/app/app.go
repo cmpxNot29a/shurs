@@ -42,10 +42,10 @@ func getUrlfromPost(w http.ResponseWriter, r *http.Request) {
 
 func getUrlfromGet(w http.ResponseWriter, r *http.Request) {
 
-	idFromUrl := r.URL.Path[1:]
+	idFromURL := r.URL.Path[1:]
 
-	if helper.IsValidBase62String(idFromUrl) {
-		url, exists := memStorage[idFromUrl]
+	if helper.IsValidBase62String(idFromURL) {
+		url, exists := memStorage[idFromURL]
 		if exists {
 			http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 			return
