@@ -10,6 +10,9 @@ import (
 
 func handleCreateShortURL(w http.ResponseWriter, r *http.Request) {
 
+	const idLength = 8
+	const attempts = 10
+
 	defer r.Body.Close()
 
 	bodyBytes, err := io.ReadAll(r.Body)
@@ -19,9 +22,6 @@ func handleCreateShortURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	originalURL := string(bodyBytes)
-
-	const idLength = 8
-	const attempts = 10
 
 	randomID, err := helper.GenUnicID(attempts, idLength, memStorage)
 	if err != nil {
