@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/cmpxNot29a/shurs/internal/helper"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 )
@@ -15,16 +16,16 @@ func init() {
 func App() {
 
 	address := ":8080"
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 
 	validatedPostHandler := helper.ValidateURLMiddleware(http.HandlerFunc(handleCreateShortURL))
 	validatedGetHandler := helper.ValidateIDMiddleware(http.HandlerFunc(handleRedirect))
 
-	mux.Handle("POST /", validatedPostHandler)
-	mux.Handle("GET /{id}", validatedGetHandler)
+	r.Post("/", validatedPostHandler.ServeHTTP)
+	r.Get("/{id}", validatedGetHandler.ServeHTTP)
 
 	log.Printf("INFO: Starting server on address %s", address)
-	err := http.ListenAndServe(address, mux)
+	err := http.ListenAndServe(address, r)
 
 	if err != nil {
 		log.Fatalf("FATAL: Server failed to start: %v", err)

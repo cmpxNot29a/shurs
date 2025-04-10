@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/cmpxNot29a/shurs/internal/helper"
+	"github.com/go-chi/chi/v5"
 	"io"
 	"log"
 	"net/http"
@@ -44,7 +45,7 @@ func handleCreateShortURL(w http.ResponseWriter, r *http.Request) {
 
 func handleRedirect(w http.ResponseWriter, r *http.Request) {
 
-	idFromURL := r.PathValue("id")
+	idFromURL := chi.URLParam(r, "id")
 
 	originalURL, exists := memStorage[idFromURL]
 
