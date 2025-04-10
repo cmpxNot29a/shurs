@@ -8,6 +8,8 @@ import (
 	"net/http"
 )
 
+var currentBaseURL string
+
 func handleCreateShortURL(w http.ResponseWriter, r *http.Request) {
 
 	const idLength = 8
@@ -34,8 +36,7 @@ func handleCreateShortURL(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("INFO: Handler: Stored URL: %s -> %s", randomID, originalURL)
 
-	baseURL := fmt.Sprintf("http://%s", r.Host) // TODO: Config
-	shortURL := fmt.Sprintf("%s/%s", baseURL, randomID)
+	shortURL := fmt.Sprintf("%s/%s", currentBaseURL, randomID)
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusCreated)

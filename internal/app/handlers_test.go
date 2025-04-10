@@ -22,6 +22,7 @@ func TestHandleCreateShortURL(t *testing.T) {
 		expectedContentType string
 		expectInStorage     bool
 		hostHeader          string
+		testBaseURL         string
 	}{
 		{
 			name:                "Valid URL - POST",
@@ -31,6 +32,7 @@ func TestHandleCreateShortURL(t *testing.T) {
 			expectedContentType: "text/plain; charset=utf-8",
 			expectInStorage:     true,
 			hostHeader:          "localhost:8080",
+			testBaseURL:         "http://testbaseurl.com",
 		},
 		{
 			name:                "Empty Body - POST",
@@ -40,6 +42,7 @@ func TestHandleCreateShortURL(t *testing.T) {
 			expectedContentType: "text/plain; charset=utf-8",
 			expectInStorage:     false,
 			hostHeader:          "localhost:8080",
+			testBaseURL:         "http://testbaseurl.com",
 		},
 		{
 			name:                "Invalid URL - POST",
@@ -49,16 +52,24 @@ func TestHandleCreateShortURL(t *testing.T) {
 			expectedContentType: "text/plain; charset=utf-8",
 			expectInStorage:     false,
 			hostHeader:          "localhost:8080",
+			testBaseURL:         "http://testbaseurl.com",
 		},
 	}
+
+	originalBaseURL := currentBaseURL
+
+	t.Cleanup(func() {
+		currentBaseURL = originalBaseURL
+	})
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			memStorage = make(map[string]string)
 
+			currentBaseURL = tc.testBaseURL
+
 			requestBody := strings.NewReader(tc.body)
 			req := httptest.NewRequest(tc.method, "/", requestBody)
-			req.Host = tc.hostHeader
 			rr := httptest.NewRecorder()
 
 			handlerWithMiddleware := helper.ValidateURLMiddleware(http.HandlerFunc(handleCreateShortURL))
@@ -79,7 +90,7 @@ func TestHandleCreateShortURL(t *testing.T) {
 				responseBodyBytes, err := io.ReadAll(result.Body)
 				require.NoError(t, err, "Не удалось прочитать тело ответа")
 				responseBody := string(responseBodyBytes)
-				expectedPrefix := "http://" + tc.hostHeader + "/"
+				expectedPrefix := tc.testBaseURL + "/"
 				assert.True(t, strings.HasPrefix(responseBody, expectedPrefix), "Тело ответа не начинается с ожидаемого префикса")
 				shortID := strings.TrimPrefix(responseBody, expectedPrefix)
 				assert.NotEmpty(t, shortID, "Короткий ID в ответе не должен быть пустым")

@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+	"github.com/cmpxNot29a/shurs/internal/config"
 	"github.com/cmpxNot29a/shurs/internal/helper"
 	"github.com/go-chi/chi/v5"
 	"log"
@@ -13,9 +15,11 @@ func init() {
 	memStorage = make(map[string]string)
 }
 
-func App() {
+func App(conf *config.Config) error {
 
-	address := ":8080"
+	address := conf.ServerAddress
+	currentBaseURL = conf.ServerAddress
+
 	r := chi.NewRouter()
 
 	validatedPostHandler := helper.ValidateURLMiddleware(http.HandlerFunc(handleCreateShortURL))
@@ -28,7 +32,8 @@ func App() {
 	err := http.ListenAndServe(address, r)
 
 	if err != nil {
-		log.Fatalf("FATAL: Server failed to start: %v", err)
+		return fmt.Errorf("server failed to start: %w", err)
 	}
 
+	return nil
 }
