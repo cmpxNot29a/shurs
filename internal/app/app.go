@@ -18,7 +18,7 @@ func init() {
 func App(conf *config.Config) error {
 
 	address := conf.ServerAddress
-	currentBaseURL = conf.ServerAddress
+	currentBaseURL = conf.BaseURL
 
 	r := chi.NewRouter()
 
