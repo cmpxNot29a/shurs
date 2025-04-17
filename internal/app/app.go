@@ -2,38 +2,42 @@ package app
 
 import (
 	"fmt"
-	"github.com/cmpxNot29a/shurs/internal/config"
-	"github.com/cmpxNot29a/shurs/internal/helper"
-	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
+
+	"github.com/cmpxNot29a/shurs/internal/config"
+	"github.com/go-chi/chi/v5"
 )
-
-var memStorage map[string]string
-
-func init() {
-	memStorage = make(map[string]string)
-}
 
 func App(conf *config.Config) error {
 
-	address := conf.ServerAddress
-	currentBaseURL = conf.BaseURL
+	idLength := conf.IDLength
+	attempts := conf.Attempts
+
+	storage := NewInMemoryStorage()
+
+	if idLength <= 0 {
+		log.Printf("WARN (App): Invalid ID Length (%d) from config, using default %d", idLength, config.DefaultIDLength)
+		idLength = config.DefaultIDLength // Используем константу из config
+	}
+	if attempts <= 0 {
+		log.Printf("WARN (App): Invalid Attempts (%d) from config, using default %d", attempts, config.DefaultAttempts)
+		attempts = config.DefaultAttempts // Используем константу из config
+	}
+
+	var service ShortenerUseCase = NewShortenerService(storage, idLength, attempts)
+	handler := NewHandler(service, conf.BaseURL)
 
 	r := chi.NewRouter()
 
-	validatedPostHandler := helper.ValidateURLMiddleware(http.HandlerFunc(handleCreateShortURL))
-	validatedGetHandler := helper.ValidateIDMiddleware(http.HandlerFunc(handleRedirect))
+	idValidatorMiddleware := ValidateIDMiddleware(idLength)
+	r.Post("/", ValidateURLMiddleware(http.HandlerFunc(handler.CreateShortURL)).ServeHTTP)
+	r.Get("/{id}", idValidatorMiddleware(http.HandlerFunc(handler.Redirect)).ServeHTTP)
 
-	r.Post("/", validatedPostHandler.ServeHTTP)
-	r.Get("/{id}", validatedGetHandler.ServeHTTP)
-
-	log.Printf("INFO: Starting server on address %s", address)
-	err := http.ListenAndServe(address, r)
-
+	log.Printf("INFO: Starting server on address %s", conf.ServerAddress)
+	err := http.ListenAndServe(conf.ServerAddress, r)
 	if err != nil {
 		return fmt.Errorf("server failed to start: %w", err)
 	}
-
 	return nil
 }

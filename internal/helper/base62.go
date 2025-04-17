@@ -3,7 +3,6 @@ package helper
 import (
 	"crypto/rand"
 	"fmt"
-	"log"
 	"regexp"
 )
 
@@ -26,33 +25,16 @@ func GenerateRandomBase62(length int) ([]byte, error) {
 	return result, nil
 }
 
-func IsValidBase62String(s string) bool {
+func IsValidBase62String(s string, expectedLength int) bool {
 	// Проверка длины
-	if len(s) != 8 {
+	if len(s) != expectedLength {
 		return false
 	}
-	matched, err := regexp.MatchString("^[0-9a-zA-Z]{8}$", s)
+
+	pattern := fmt.Sprintf("^[0-9a-zA-Z]{%d}$", expectedLength)
+	matched, err := regexp.MatchString(pattern, s)
 	if err != nil {
 		return false
 	}
 	return matched
-}
-
-func GenUnicID(attempts int, idLength int, storage map[string]string) (string, error) {
-	for range attempts {
-
-		randomIDBytes, err := GenerateRandomBase62(idLength)
-
-		if err != nil {
-			continue
-		}
-
-		randomID := string(randomIDBytes)
-		_, exists := storage[randomID]
-		if !exists {
-			return randomID, nil
-		}
-		log.Printf("WARN: Handler: Collision detected for ID: %s. Retrying...", randomID)
-	}
-	return "", fmt.Errorf("failed to generate unique ID after multiple attempts")
 }
