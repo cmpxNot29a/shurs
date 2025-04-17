@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock" // Импорт mock
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ type MockShortenerService struct {
 	mock.Mock
 }
 
-// Убедимся, что мок реализует интерфейс (статическая проверка)
+// Убедимся, что мок реализует интерфейс
 var _ ShortenerUseCase = (*MockShortenerService)(nil)
 
 func (m *MockShortenerService) CreateShortURL(ctx context.Context, originalURL string) (string, error) {
@@ -35,7 +35,6 @@ func (m *MockShortenerService) GetOriginalURL(ctx context.Context, id string) (s
 	return args.String(0), args.Error(1)
 }
 
-// --- Тесты ---
 
 func TestHandler_CreateShortURL(t *testing.T) {
 	testCases := []struct {
@@ -49,7 +48,7 @@ func TestHandler_CreateShortURL(t *testing.T) {
 		expectedBodyPrefix  string
 		testBaseURL         string
 	}{
-		// ... (тестовые случаи как раньше) ...
+
 		{
 			name:                "Valid URL - Success",
 			method:              http.MethodPost,
@@ -151,7 +150,7 @@ func TestHandler_Redirect(t *testing.T) {
 		expectedStatus   int
 		expectedLocation string
 	}{
-		// ... (тестовые случаи как раньше) ...
+
 		{
 			name:             "Valid ID - Success",
 			requestID:        validID,
@@ -164,7 +163,7 @@ func TestHandler_Redirect(t *testing.T) {
 			name:             "ID Not Found (Service returns ErrNotFound)",
 			requestID:        notFoundID,
 			mockReturnURL:    "",
-			mockReturnErr:    ErrNotFound, // Используем нашу ошибку
+			mockReturnErr:    ErrNotFound,
 			expectedStatus:   http.StatusNotFound,
 			expectedLocation: "",
 		},
@@ -247,7 +246,7 @@ func TestIsValidBase62String(t *testing.T) {
 		{"Too long", "Abc123Xyz", testLength, false},
 		{"Invalid chars", "Abc123X!", testLength, false},
 		{"Empty string", "", testLength, false},
-		{"Valid 5 chars (wrong length)", "abc12", 5, true}, // Доп. тест на другую длину
+		{"Valid 5 chars (wrong length)", "abc12", 5, true},
 	}
 
 	for _, tc := range testCases {
