@@ -1,4 +1,4 @@
-package app
+package middleware
 
 import (
 	"bytes"
@@ -6,14 +6,13 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/cmpxNot29a/shurs/internal/config" // Используем для DefaultIDLength
 	"github.com/cmpxNot29a/shurs/internal/helper"
 	"github.com/go-chi/chi/v5"
 )
 
-const defaultMiddlewareIDLengthFallback = 8
-
-// ValidateURLMiddleware проверяет URL в теле POST запроса.
-func ValidateURLMiddleware(next http.Handler) http.Handler {
+// ValidateURL проверяет URL в теле POST запроса.
+func ValidateURL(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		bodyBytes, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -35,17 +34,17 @@ func ValidateURLMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// ValidateIDMiddleware создает middleware, которое проверяет ID указанной длины.
-func ValidateIDMiddleware(expectedIDLength int) func(http.Handler) http.Handler {
+// ValidateID создает middleware, которое проверяет ID указанной длины.
+func ValidateID(expectedIDLength int) func(http.Handler) http.Handler {
 	localExpectedLength := expectedIDLength
 	if localExpectedLength <= 0 {
 		log.Printf("WARN (Middleware Factory): Invalid expected ID length (%d) passed, using fallback %d for validation",
-			expectedIDLength, defaultMiddlewareIDLengthFallback)
-		localExpectedLength = defaultMiddlewareIDLengthFallback
+			expectedIDLength, config.DefaultIDLength)
+		localExpectedLength = config.DefaultIDLength
 	}
 
 	middlewareFunc := func(next http.Handler) http.Handler {
-		requestHandlerFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			idFromURL := chi.URLParam(r, "id")
 			if !helper.IsValidBase62String(idFromURL, localExpectedLength) {
 				log.Printf("WARN: Middleware (ID): Invalid ID format received (len != %d or invalid chars): %s",
@@ -53,11 +52,9 @@ func ValidateIDMiddleware(expectedIDLength int) func(http.Handler) http.Handler 
 				http.Error(w, "Invalid ID format", http.StatusBadRequest)
 				return
 			}
-
 			log.Printf("INFO: Middleware (ID): Validation successful for ID: %s", idFromURL)
 			next.ServeHTTP(w, r)
 		})
-		return requestHandlerFunc
 	}
 	return middlewareFunc
 }

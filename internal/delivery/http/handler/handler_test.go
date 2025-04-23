@@ -1,4 +1,4 @@
-package app
+package handler
 
 import (
 	"context"
@@ -9,6 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	mw "github.com/cmpxNot29a/shurs/internal/delivery/http/middleware"
+	"github.com/cmpxNot29a/shurs/internal/domain/repository"
+	domainUC "github.com/cmpxNot29a/shurs/internal/domain/usecase"
 	"github.com/cmpxNot29a/shurs/internal/helper"
 
 	"github.com/go-chi/chi/v5"
@@ -23,7 +26,7 @@ type MockShortenerService struct {
 }
 
 // Убедимся, что мок реализует интерфейс
-var _ ShortenerUseCase = (*MockShortenerService)(nil)
+var _ domainUC.ShortenerUseCase = (*MockShortenerService)(nil)
 
 func (m *MockShortenerService) CreateShortURL(ctx context.Context, originalURL string) (string, error) {
 	args := m.Called(ctx, originalURL)
@@ -34,7 +37,6 @@ func (m *MockShortenerService) GetOriginalURL(ctx context.Context, id string) (s
 	args := m.Called(ctx, id)
 	return args.String(0), args.Error(1)
 }
-
 
 func TestHandler_CreateShortURL(t *testing.T) {
 	testCases := []struct {
@@ -88,8 +90,8 @@ func TestHandler_CreateShortURL(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// 1. Создаем мок и присваиваем интерфейсной переменной
-			mockServicePtr := new(MockShortenerService)       // Указатель на мок
-			var mockService ShortenerUseCase = mockServicePtr // Присваиваем интерфейсу
+			mockServicePtr := new(MockShortenerService)                // Указатель на мок
+			var mockService domainUC.ShortenerUseCase = mockServicePtr // Присваиваем интерфейсу
 
 			// 2. Создаем хендлер, передавая интерфейс
 			handler := NewHandler(mockService, tc.testBaseURL)
@@ -107,7 +109,7 @@ func TestHandler_CreateShortURL(t *testing.T) {
 			rr := httptest.NewRecorder()
 
 			// 5. Вызываем middleware + handler
-			handlerWithMiddleware := ValidateURLMiddleware(http.HandlerFunc(handler.CreateShortURL))
+			handlerWithMiddleware := mw.ValidateURL(http.HandlerFunc(handler.Create))
 			handlerWithMiddleware.ServeHTTP(rr, req)
 
 			// 6. Проверяем HTTP ответ
@@ -163,7 +165,7 @@ func TestHandler_Redirect(t *testing.T) {
 			name:             "ID Not Found (Service returns ErrNotFound)",
 			requestID:        notFoundID,
 			mockReturnURL:    "",
-			mockReturnErr:    ErrNotFound,
+			mockReturnErr:    repository.ErrNotFound,
 			expectedStatus:   http.StatusNotFound,
 			expectedLocation: "",
 		},
@@ -191,7 +193,7 @@ func TestHandler_Redirect(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// 1. Создаем мок и присваиваем интерфейсу
 			mockServicePtr := new(MockShortenerService)
-			var mockService ShortenerUseCase = mockServicePtr
+			var mockService domainUC.ShortenerUseCase = mockServicePtr
 
 			// 2. Создаем хендлер
 			handler := NewHandler(mockService, "http://dummy.base")
@@ -211,7 +213,7 @@ func TestHandler_Redirect(t *testing.T) {
 			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, routeCtx))
 
 			// 5. Вызываем middleware + handler
-			middlewareFunc := ValidateIDMiddleware(expectedIDLength)
+			middlewareFunc := mw.ValidateID(expectedIDLength)
 			handlerWithMiddleware := middlewareFunc(http.HandlerFunc(handler.Redirect))
 			handlerWithMiddleware.ServeHTTP(rr, req)
 
