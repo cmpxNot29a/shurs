@@ -1,4 +1,4 @@
-package app
+package repository
 
 import (
 	"context"
@@ -10,7 +10,7 @@ var (
 	ErrConflict = errors.New("short link ID conflict or already exists")
 )
 
-type Storage interface {
+type ShortLinkRepository interface {
 	Save(ctx context.Context, id, originalURL string) error
 	GetByID(ctx context.Context, id string) (originalURL string, err error)
 	Exists(ctx context.Context, id string) (bool, error)
